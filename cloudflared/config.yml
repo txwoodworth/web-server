@@ -1,0 +1,7 @@
+tunnel: 6e6d14ca-11e1-43a9-af9d-72343157fe7e
+credentials-file: /etc/cloudflared/credentials.json
+
+ingress:
+  - hostname: wsl.txwoodworth.com
+    service: http://proxy:80
+  - service: http_status:404

@@ -1,0 +1,65 @@
+networks:
+  app_net:
+    driver: bridge
+
+services:
+  servo:
+    image: servo:local
+    build: ./servo
+    container_name: servo
+    #    devices:
+ #     - "/dev/i2c-1:/dev/i2c-1"   # access I2C
+    networks: [app_net]
+    expose:
+      - "${SERVO_PORT}"
+    restart: unless-stopped
+
+  webcam:
+      image: webcam:local
+      build: ./webcam
+      container_name: webcam
+      networks: [app_net]
+      expose:
+      - "${WEBCAM_PORT}"
+#    devices:
+ #     - "/dev/video0:/dev/video0"
+      restart: unless-stopped
+
+  web:
+      image: webpage:local   # if you build locally, change to build: ./webpage
+      build: ./web
+      container_name: web
+      networks: [app_net]
+      expose:
+      - "${WEB_PORT}"   # internal only
+      depends_on:
+      - servo
+      - webcam
+      restart: unless-stopped
+
+  proxy:
+    build: ./proxy
+    container_name: proxy
+    depends_on:
+      - web    # change to your actual webpage container name
+      - webcam   # uncomment if webcam is its own container
+      - servo    # uncomment if servo is its own container
+    networks: [app_net]
+    ports:
+      - "8080:80"   # for testing locally; cloudflared will use proxy:80 internally
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    command: tunnel run
+    container_name: cloudflared
+    volumes:
+      - ./cloudflared:/etc/cloudflared
+    depends_on:
+      - proxy
+    networks: [app_net]
+    restart: unless-stopped
+
+    
+ 
+
+
